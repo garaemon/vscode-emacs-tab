@@ -38,7 +38,7 @@ export function activate(context: vscode.ExtensionContext) {
  * @param id {string} id of language
  * @return {Object} return language configuration
  */
-function getLanguageConfiguration(id: string): Object {
+function getLanguageConfiguration(id: string) {
   const editor = vscode.window.activeTextEditor;
   const documentLanguageId: string = editor.document.languageId;
   // walk through all the extensions
@@ -66,9 +66,9 @@ function createRegExpFromString(pattern: string): RegExp {
 
 /**
  * reindent current line
- * @param indentationRules {Object}
+ * @param indentationRules
  */
-export function reindentCurrentLine(indentationRules: Object) {
+export function reindentCurrentLine(indentationRules) {
   const editor = vscode.window.activeTextEditor;
   if (!editor) {
     return;
