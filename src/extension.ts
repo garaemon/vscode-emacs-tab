@@ -66,13 +66,13 @@ class IndentationRule {
 
   public constructor(config: IIndentationRuleConfig) {
     this.unIndentedLinePattern =
-        this.createRegExp(config.unIndentedLinePattern);
+        this.createRegExp(config && config.unIndentedLinePattern);
     this.increaseIndentPattern =
-        this.createRegExp(config.increaseIndentPattern);
+        this.createRegExp(config && config.increaseIndentPattern);
     this.decreaseIndentPattern =
-        this.createRegExp(config.decreaseIndentPattern);
+        this.createRegExp(config && config.decreaseIndentPattern);
     this.indentNextLinePattern =
-        this.createRegExp(config.indentNextLinePattern);
+        this.createRegExp(config && config.indentNextLinePattern);
   }
 
   public testUnIndentedLinePattern(line: string): boolean {
@@ -124,7 +124,7 @@ class IndentationRule {
 
   private createRegExp(s: string): RegExp {
     try {
-      if (s.length > 0) {
+      if (s && s.length > 0) {
         return new RegExp(s);
       } else {
         return null;
@@ -266,7 +266,6 @@ function estimateIndentAction(
   const onEnterRulesArray = languageConfiguration.onEnterRules;
   const bracketsArray = languageConfiguration.brackets;
   const currentLineWihtoutLeadingWhitespaces = currentLine.replace(/^\s*/, '');
-
   // 0 indentPattern
   const indentationRule =
       new IndentationRule(languageConfiguration.indentationRules);
@@ -275,7 +274,6 @@ function estimateIndentAction(
   if (indentationRuleIndentAction != null) {
     return indentationRuleIndentAction;
   }
-
   // 1 regexp Rule, not yet supported
   /*
   for (const rule of onEnterRulesArray) {
@@ -302,6 +300,7 @@ function estimateIndentAction(
       }
     }
   }
+
   // 3 open bracket based logic
   if (validPreviousLine.length > 0) {
     for (const bracketConfig of bracketsArray) {

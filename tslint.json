@@ -11,7 +11,7 @@
         "radix": false,
         "ter-arrow-parens": false,
         "quotemark": [true, "single"],
-        "max-classes-per-file": false
+        "max-classes-per-file": false{}
     },
     "rulesDirectory": []
 }
