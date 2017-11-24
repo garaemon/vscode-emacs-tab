@@ -4,6 +4,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import * as json from 'comment-json';
 
 // Rule configs
 type IBracketRuleConfig = [string, string];
@@ -290,7 +291,7 @@ function getLanguageConfiguration(id: string): ILanguageConfiguration {
         const langConfigFilepath =
             path.join(ext.extensionPath, packageLangData.configuration);
         return mergeLanguageConfiguration(
-          require(langConfigFilepath),
+          json.parse(fs.readFileSync(langConfigFilepath).toString()),
           additionalConfiguration);
       }
     }
