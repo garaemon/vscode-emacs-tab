@@ -4,6 +4,10 @@
     "description": "emacs like tab behavior",
     "version": "0.0.4",
     "publisher": "garaemon",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/garaemon/vscode-emacs-tab.git"
+    },
     "engines": {
         "vscode": "^1.18.0"
     },
