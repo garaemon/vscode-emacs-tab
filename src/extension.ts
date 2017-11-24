@@ -9,21 +9,21 @@ import * as vscode from 'vscode';
 type IBracketRuleConfig = [string, string];
 
 interface IEnterRuleConfig {
-  beforeText: string;
-  afterText: string;
+  beforeText?: string;
+  afterText?: string;
 }
 
 interface IIndentationRuleConfig {
-  unIndentedLinePattern: string;
-  increaseIndentPattern: string;
-  decreaseIndentPattern: string;
-  indentNextLinePattern: string;
+  unIndentedLinePattern?: string;
+  increaseIndentPattern?: string;
+  decreaseIndentPattern?: string;
+  indentNextLinePattern?: string;
 }
 
 interface ILanguageConfiguration {
-  indentationRules: IIndentationRuleConfig;
-  onEnterRules: IEnterRuleConfig[];
-  brackets: IBracketRuleConfig[];
+  indentationRules?: IIndentationRuleConfig;
+  onEnterRules?: IEnterRuleConfig[];
+  brackets?: IBracketRuleConfig[];
 }
 
 class BracketRule {
@@ -141,6 +141,15 @@ const DEFAULT_BRACKETS = [
   ['[', ']'],
 ];
 
+const ADDITIONAL_CONFIGURATION_FOR_LANGUAGE: {[id: string]: ILanguageConfiguration;} = {
+  python: {
+     indentationRules: {
+       increaseIndentPattern:
+       '^\\s*(?:def|class|for|if|elif|else|while|try|with|finally|except|async).*?:\\s*$',
+     },
+  },
+};
+
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -233,14 +242,44 @@ function getPreviousAndCurrentLine(editor: vscode.TextEditor): string[] {
   return [validPreviousLine, currentLine];
 }
 
+function mergeLanguageConfiguration(
+  a: ILanguageConfiguration,
+  b: ILanguageConfiguration): ILanguageConfiguration {
+    const mergedConfiguration: ILanguageConfiguration = {
+      indentationRules: undefined,
+      brackets: [],
+      onEnterRules: [],
+    };
+    if (a.indentationRules) {
+      mergedConfiguration.indentationRules = Object.assign({},
+        a.indentationRules, b.indentationRules);
+    } else {
+      mergedConfiguration.indentationRules = b.indentationRules;
+    }
+    if (a.brackets) {
+      mergedConfiguration.brackets = a.brackets.concat(b.brackets || []);
+    } else {
+      mergedConfiguration.brackets = b.brackets;
+    }
+    if (a.onEnterRules) {
+      mergedConfiguration.onEnterRules = a.onEnterRules.concat(b.onEnterRules || []);
+    } else {
+      mergedConfiguration.onEnterRules = b.onEnterRules;
+    }
+    return mergedConfiguration;
+}
+
 /**
- *
  * @param id {string} id of language
  * @return {Object} return language configuration
  */
 function getLanguageConfiguration(id: string): ILanguageConfiguration {
   const editor = vscode.window.activeTextEditor;
   const documentLanguageId: string = editor.document.languageId;
+  let additionalConfiguration = {};
+  if (documentLanguageId in ADDITIONAL_CONFIGURATION_FOR_LANGUAGE) {
+    additionalConfiguration = ADDITIONAL_CONFIGURATION_FOR_LANGUAGE[documentLanguageId];
+  }
   // walk through all the extensions
   for (const ext of vscode.extensions.all) {
     if (ext.packageJSON && ext.packageJSON.contributes &&
@@ -250,7 +289,9 @@ function getLanguageConfiguration(id: string): ILanguageConfiguration {
       if (packageLangData) {
         const langConfigFilepath =
             path.join(ext.extensionPath, packageLangData.configuration);
-        return require(langConfigFilepath);
+        return mergeLanguageConfiguration(
+          require(langConfigFilepath),
+          additionalConfiguration);
       }
     }
   }
