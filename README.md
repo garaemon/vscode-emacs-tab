@@ -1,5 +1,7 @@
 # vscode-emacs-tab
 
+![screencast](emacs-tab.gif)
+
 This plugin provides `emacs-tab.reindentCurrentLine`
 command, which indents like emacs behavior.
 
