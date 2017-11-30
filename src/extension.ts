@@ -338,9 +338,9 @@ function estimateIndentAction(
       const bracket = new BracketRule(bracketConfig);
       if (bracket.openRegExp.test(validPreviousLine) &&
           bracket.closeRegExp.test(currentLineWihtoutLeadingWhitespaces)) {
-        return vscode.IndentAction.IndentOutdent;
+              return vscode.IndentAction.IndentOutdent;
+          }
       }
-    }
   }
 
   // 3 open bracket based logic
