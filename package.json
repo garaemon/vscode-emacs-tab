@@ -2,7 +2,7 @@
     "name": "vscode-emacs-tab",
     "displayName": "vscode-emacs-tab",
     "description": "emacs like tab behavior",
-    "version": "0.0.7",
+    "version": "0.0.8",
     "publisher": "garaemon",
     "repository": {
         "type": "git",
