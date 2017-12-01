@@ -151,6 +151,14 @@ const ADDITIONAL_CONFIGURATION_FOR_LANGUAGE: {
           '^\\s*(?:def|class|for|if|elif|else|while|try|with|finally|except|async).*?:\\s*$',
     },
   },
+  html: {
+    indentationRules: {
+      increaseIndentPattern:
+          '<(?!\\?|(?:area|base|br|col|frame|hr|html|img|input|link|meta|param)\\b|[^>]*\\/>)([-_\\.A-Za-z0-9]+)(?=\\s|>)\\b[^>]*>(?!.*<\\/\\1>)|<!--(?!.*-->)|\\{[^}"\']*$',
+      decreaseIndentPattern: '^\\s*(<\\/(?!html)[-_\\.A-Za-z0-9]+\\b[^>]*>|-->|\\})',
+    },
+    // TODO: support onEnterRules
+  },
 };
 
 // this method is called when your extension is activated
@@ -490,8 +498,8 @@ export function reindentCurrentLine(
   if (beforeIndentCursorPositionCharacter < beforeIndentCurrentIndentNative) {
     // move to the first character of the line
     const nativeCharacterTabSize = isUsingHardTab() ? 1 : tabSize;
-    const nextPosition =
-        new vscode.Position(currentPosition.line, idealIndent * nativeCharacterTabSize);
+    const nextPosition = new vscode.Position(
+        currentPosition.line, idealIndent * nativeCharacterTabSize);
     editor.selection = new vscode.Selection(nextPosition, nextPosition);
   } else if (idealIndent !== beforeIndentCurrentIndent) {
     const cursorMovement = (idealIndent - beforeIndentCurrentIndent) * tabSize;
