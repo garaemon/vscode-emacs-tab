@@ -482,13 +482,17 @@ export function reindentCurrentLine(
   // before indent line, store the position of cursor
   const beforeIndentCursorPositionCharacter = currentPosition.character;
   if (idealIndent !== beforeIndentCurrentIndent) {
-    const indentedCurrentLine = indentLine(
+    var indentedCurrentLine = indentLine(
         currentLine, idealIndent, previousIndent,
         countIndent(previousIndent, tabSize), tabSize);
     vscode.window.activeTextEditor.edit((edit) => {
       const startPosition = new vscode.Position(currentPosition.line, 0);
       const endPosition =
           new vscode.Position(currentPosition.line, currentLine.length);
+      if (document.eol == 2 && 1 < indentedCurrentLine.length
+          && currentLine.length != beforeIndentCurrentIndentNative) {
+        indentedCurrentLine = indentedCurrentLine.substring(0,indentedCurrentLine.length-1);
+      }
       edit.replace(
           new vscode.Range(startPosition, endPosition), indentedCurrentLine);
     });
