@@ -9,7 +9,7 @@
         "url": "https://github.com/garaemon/vscode-emacs-tab.git"
     },
     "engines": {
-        "vscode": "^1.18.0"
+        "vscode": "^1.67.0"
     },
     "categories": [
         "Other"
