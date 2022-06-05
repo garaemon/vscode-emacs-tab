@@ -14,6 +14,5 @@ jobs:
           node-version: ^14
       - run: npm install
       - run: npm test
-      - uses: lannonbr/vsce-action@3.0.0
-        with:
-          args: "package"
+      - run: npm install -g vsce
+      - run: vsce package
