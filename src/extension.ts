@@ -122,11 +122,6 @@ class IndentationRule {
       return null;
     }
   }
-  {
-  "key": "tab",
-    "command": "tab",
-      "when": "editorTextFocus && !editorReadonly && !editorTabMovesFocus"
-}
   private createRegExp(s: string): RegExp {
   try {
     if (s && s.length > 0) {

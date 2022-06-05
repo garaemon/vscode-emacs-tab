@@ -9,7 +9,7 @@
         "url": "https://github.com/garaemon/vscode-emacs-tab.git"
     },
     "engines": {
-        "vscode": "^1.18.0"
+        "vscode": "^1.67.0"
     },
     "categories": [
         "Other"
@@ -35,7 +35,7 @@
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",
         "watch": "tsc -watch -p ./",
-        "test": "npm run compile && node ./node_modules/vscode/bin/test"
+        "test": "npm run compile && node ./out/test/index.js"
     },
     "devDependencies": {
         "@types/vscode": "^1.67.0",
