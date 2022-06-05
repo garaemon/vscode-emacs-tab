@@ -1,12 +1,13 @@
-name: CI
-on: push
+name: Release 
+
+on: 
+  release:
+    types:
+      - published
 
 jobs:
-  build:
-    strategy:
-      matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+  release:
+    runs-on: ubuntu 
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
@@ -16,4 +17,5 @@ jobs:
       - run: npm test
       - run: npm install -g vsce
       - run: vsce package
+      - run: vsce publish -p ${{ secrets.VSCE_PAT }}
 
