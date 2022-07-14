@@ -123,16 +123,16 @@ class IndentationRule {
     }
   }
   private createRegExp(s: string): RegExp {
-  try {
-    if (s && s.length > 0) {
-      return new RegExp(s);
-    } else {
+    try {
+      if (s && s.length > 0) {
+        return new RegExp(s);
+      } else {
+        return null;
+      }
+    } catch (err) {
       return null;
     }
-  } catch (err) {
-    return null;
   }
-}
 }
 
 const DEFAULT_BRACKETS = [
@@ -306,6 +306,23 @@ function getLanguageConfiguration(id: string): ILanguageConfiguration {
           json.parse(configFileContent) as ILanguageConfiguration,
           additionalConfiguration);
       }
+    }
+  }
+
+  // If no language config is found, find the configuration from resources directory because
+  // embedded language extension is not available if remote vscode is used.
+  const resourceDir = path.join(__dirname, '../resources');
+  const languageDirs = fs.readdirSync(resourceDir);
+  for (const languageDir of languageDirs) {
+    const languageName = path.basename(languageDir);
+    if (languageName == documentLanguageId) {
+      // Hit
+      const langConfigFilepath =
+        path.join(resourceDir, languageDir, 'language-configuration.json');
+      const configFileContent = fs.readFileSync(langConfigFilepath).toString();
+      return mergeLanguageConfiguration(
+        json.parse(configFileContent) as ILanguageConfiguration,
+        additionalConfiguration);
     }
   }
   return null;
