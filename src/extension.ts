@@ -194,7 +194,7 @@ function runReindentCurrentLineCommand(debug: boolean) {
     vscode.window.showInformationMessage(convertIndentActionToString(indent));
   }
   else {
-    reindentCurrentLine(indent, previousValidLine, currentLine);
+    reindentCurrentLine(indent, previousValidLine, currentLine, documentLanguageId);
   }
 }
 
@@ -439,9 +439,9 @@ function createCloseBracketRegExp(closeBracket: string): RegExp {
   return createRegExp(str);
 }
 
-function getTabSize(): number {
+function getTabSize(languageId: string): number {
   // TODO: estimate from content
-  return vscode.workspace.getConfiguration('editor').tabSize;
+  return vscode.workspace.getConfiguration('editor', {languageId: languageId}).tabSize;
 }
 
 /**
@@ -485,8 +485,8 @@ function convertIndentLevelToString(
  */
 export function reindentCurrentLine(
   indentAction: vscode.IndentAction, validPreviousLine: string,
-  currentLine: string): void {
-  const tabSize = getTabSize();
+  currentLine: string, languageId: string): void {
+  const tabSize = getTabSize(languageId);
   const editor = vscode.window.activeTextEditor;
   const currentPosition = editor.selection.active;
   const document = editor.document;
