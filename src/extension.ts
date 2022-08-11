@@ -123,16 +123,16 @@ class IndentationRule {
     }
   }
   private createRegExp(s: string): RegExp {
-  try {
-    if (s && s.length > 0) {
-      return new RegExp(s);
-    } else {
+    try {
+      if (s && s.length > 0) {
+        return new RegExp(s);
+      } else {
+        return null;
+      }
+    } catch (err) {
       return null;
     }
-  } catch (err) {
-    return null;
   }
-}
 }
 
 const DEFAULT_BRACKETS = [
@@ -160,53 +160,66 @@ const ADDITIONAL_CONFIGURATION_FOR_LANGUAGE: {
   },
 };
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
+let LANGUAGE_CONFIGURATION_CACHE: {
+  [id: string]: ILanguageConfiguration
+} = {};
+
+function runReindentCurrentLineCommand(debug: boolean) {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) {
+    vscode.window.showInformationMessage('No editor');
+    return;
+  }
+  const documentLanguageId: string = editor.document.languageId;
+
+  // If documentLanguageId is not found in LANGUAGE_CONFIGURATION_CACHE, try to update 
+  // LANGUAGE_CONFIGURATION_CACHE first.
+  if (!(documentLanguageId in LANGUAGE_CONFIGURATION_CACHE)) {
+    const languageConfig = getLanguageConfiguration(documentLanguageId);
+    if (languageConfig) {
+      LANGUAGE_CONFIGURATION_CACHE[documentLanguageId] = languageConfig;
+    }
+    else {
+      vscode.window.showInformationMessage(
+        `no language config for ${documentLanguageId}`);
+      return;
+    }
+  }
+
+  const langConfig = LANGUAGE_CONFIGURATION_CACHE[documentLanguageId];
+  const [previousValidLine, currentLine] = getPreviousAndCurrentLine(editor);
+  const indent =
+    estimateIndentAction(previousValidLine, currentLine, langConfig);
+  if (debug) {
+    vscode.window.showInformationMessage(convertIndentActionToString(indent));
+  }
+  else {
+    reindentCurrentLine(indent, previousValidLine, currentLine, documentLanguageId);
+  }
+}
+
 export function activate(context: vscode.ExtensionContext) {
-  // The command has been defined in the package.json file
-  // Now provide the impleme<ntation of the command with  registerCommand
-  // The commandId parameter must match the command field in package.json
+  // Cleanup cache when the extension is activated. 
+  LANGUAGE_CONFIGURATION_CACHE = {};
+  // CAVEAT: onDidOpenTextDocument is not called if a text buffer is newly created.
+  // LANGUAGE_CONFIGURATION_CACHE should be updated when reindentCurrentLineCommand is called and 
+  // no suitable ILanguageConfiguration is found in LANGUAGE_CONFIGURATION_CACHE.
+  vscode.workspace.onDidOpenTextDocument((d) => {
+    const languageConfig = getLanguageConfiguration(d.languageId);
+    if (languageConfig) {
+      LANGUAGE_CONFIGURATION_CACHE[d.languageId] = languageConfig;
+    }
+  });
+
+  // Register commands
   const reindentCurrentLineCommand =
     vscode.commands.registerCommand('emacs-tab.reindentCurrentLine', () => {
-      const editor = vscode.window.activeTextEditor;
-      if (!editor) {
-        vscode.window.showInformationMessage('No editor');
-        return;
-      }
-      const documentLanguageId: string = editor.document.languageId;
-      const langConfig = getLanguageConfiguration(documentLanguageId);
-      if (!langConfig) {
-        vscode.window.showInformationMessage(
-          `no language config for ${documentLanguageId}`);
-        return;
-      }
-      const [previousValidLine, currentLine] =
-        getPreviousAndCurrentLine(editor);
-      const indent =
-        estimateIndentAction(previousValidLine, currentLine, langConfig);
-      reindentCurrentLine(indent, previousValidLine, currentLine);
+      runReindentCurrentLineCommand(false);
     });
 
   const debugEstimateIndentLevel = vscode.commands.registerCommand(
     'emacs-tab.debugEstimateIndentLevel', () => {
-      const editor = vscode.window.activeTextEditor;
-      if (!editor) {
-        vscode.window.showInformationMessage('No editor');
-        return;
-      }
-      const documentLanguageId: string = editor.document.languageId;
-      const langConfig = getLanguageConfiguration(documentLanguageId);
-      if (!langConfig) {
-        vscode.window.showInformationMessage(
-          `no language config for ${documentLanguageId}`);
-        return;
-      }
-      const [previousValidLine, currentLine] =
-        getPreviousAndCurrentLine(editor);
-      const indent =
-        estimateIndentAction(previousValidLine, currentLine, langConfig);
-      vscode.window.showInformationMessage(
-        convertIndentActionToString(indent));
+      runReindentCurrentLineCommand(true);
     });
   context.subscriptions.push(reindentCurrentLineCommand);
 }
@@ -306,6 +319,23 @@ function getLanguageConfiguration(id: string): ILanguageConfiguration {
           json.parse(configFileContent) as ILanguageConfiguration,
           additionalConfiguration);
       }
+    }
+  }
+
+  // If no language config is found, find the configuration from resources directory because
+  // embedded language extension is not available if remote vscode is used.
+  const resourceDir = path.join(__dirname, '../resources');
+  const languageDirs = fs.readdirSync(resourceDir);
+  for (const languageDir of languageDirs) {
+    const languageName = path.basename(languageDir);
+    if (languageName == documentLanguageId) {
+      // Hit
+      const langConfigFilepath =
+        path.join(resourceDir, languageDir, 'language-configuration.json');
+      const configFileContent = fs.readFileSync(langConfigFilepath).toString();
+      return mergeLanguageConfiguration(
+        json.parse(configFileContent) as ILanguageConfiguration,
+        additionalConfiguration);
     }
   }
   return null;
@@ -409,9 +439,9 @@ function createCloseBracketRegExp(closeBracket: string): RegExp {
   return createRegExp(str);
 }
 
-function getTabSize(): number {
+function getTabSize(languageId: string): number {
   // TODO: estimate from content
-  return vscode.workspace.getConfiguration('editor').tabSize;
+  return vscode.workspace.getConfiguration('editor', {languageId: languageId}).tabSize;
 }
 
 /**
@@ -455,8 +485,8 @@ function convertIndentLevelToString(
  */
 export function reindentCurrentLine(
   indentAction: vscode.IndentAction, validPreviousLine: string,
-  currentLine: string): void {
-  const tabSize = getTabSize();
+  currentLine: string, languageId: string): void {
+  const tabSize = getTabSize(languageId);
   const editor = vscode.window.activeTextEditor;
   const currentPosition = editor.selection.active;
   const document = editor.document;
