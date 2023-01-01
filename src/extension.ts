@@ -172,7 +172,7 @@ function runReindentCurrentLineCommand(debug: boolean) {
   }
   const documentLanguageId: string = editor.document.languageId;
 
-  // If documentLanguageId is not found in LANGUAGE_CONFIGURATION_CACHE, try to update 
+  // If documentLanguageId is not found in LANGUAGE_CONFIGURATION_CACHE, try to update
   // LANGUAGE_CONFIGURATION_CACHE first.
   if (!(documentLanguageId in LANGUAGE_CONFIGURATION_CACHE)) {
     const languageConfig = getLanguageConfiguration(documentLanguageId);
@@ -199,10 +199,10 @@ function runReindentCurrentLineCommand(debug: boolean) {
 }
 
 export function activate(context: vscode.ExtensionContext) {
-  // Cleanup cache when the extension is activated. 
+  // Cleanup cache when the extension is activated.
   LANGUAGE_CONFIGURATION_CACHE = {};
   // CAVEAT: onDidOpenTextDocument is not called if a text buffer is newly created.
-  // LANGUAGE_CONFIGURATION_CACHE should be updated when reindentCurrentLineCommand is called and 
+  // LANGUAGE_CONFIGURATION_CACHE should be updated when reindentCurrentLineCommand is called and
   // no suitable ILanguageConfiguration is found in LANGUAGE_CONFIGURATION_CACHE.
   vscode.workspace.onDidOpenTextDocument((d) => {
     const languageConfig = getLanguageConfiguration(d.languageId);
@@ -349,7 +349,7 @@ function estimateIndentAction(
   }
   const onEnterRulesArray = languageConfiguration.onEnterRules;
   const bracketsArray = languageConfiguration.brackets;
-  const currentLineWihtoutLeadingWhitespaces = currentLine.replace(/^\s*/, '');
+  const currentLineWithoutLeadingWhitespaces = currentLine.replace(/^\s*/, '');
   // 0 indentPattern
   const indentationRule =
     new IndentationRule(languageConfiguration.indentationRules);
@@ -363,7 +363,7 @@ function estimateIndentAction(
   for (const rule of onEnterRulesArray) {
     if (rule.beforeText.test(validPreviousLine)) {
       if (rule.afterText) {
-        if (rule.afterText.test(currentLineWihtoutLeadingWhitespaces)) {
+        if (rule.afterText.test(currentLineWithoutLeadingWhitespaces)) {
           return rule.action;
         }
       } else {
@@ -375,11 +375,11 @@ function estimateIndentAction(
 
   // 2 special indent-outdent
   if (validPreviousLine.length > 0 &&
-    currentLineWihtoutLeadingWhitespaces.length > 0) {
+    currentLineWithoutLeadingWhitespaces.length > 0) {
     for (const bracketConfig of bracketsArray) {
       const bracket = new BracketRule(bracketConfig);
       if (bracket.openRegExp.test(validPreviousLine) &&
-        bracket.closeRegExp.test(currentLineWihtoutLeadingWhitespaces)) {
+        bracket.closeRegExp.test(currentLineWithoutLeadingWhitespaces)) {
         return vscode.IndentAction.IndentOutdent;
       }
     }
@@ -396,10 +396,10 @@ function estimateIndentAction(
   }
 
   // 4 close bracket based logic
-  if (currentLineWihtoutLeadingWhitespaces.length > 0) {
+  if (currentLineWithoutLeadingWhitespaces.length > 0) {
     for (const bracketConfig of bracketsArray) {
       const bracket = new BracketRule(bracketConfig);
-      if (bracket.closeRegExp.test(currentLineWihtoutLeadingWhitespaces)) {
+      if (bracket.closeRegExp.test(currentLineWithoutLeadingWhitespaces)) {
         return vscode.IndentAction.Outdent;
       }
     }
@@ -495,7 +495,7 @@ export function reindentCurrentLine(
   const beforeIndentCurrentIndent =
     countIndent(getIndent(currentLine), tabSize);
   const beforeIndentCurrentIndentNative = getIndent(currentLine).length;
-  const currentLineWihtoutLeadingWhitespaces = currentLine.replace(/^\s*/, '');
+  const currentLineWithoutLeadingWhitespaces = currentLine.replace(/^\s*/, '');
 
   let idealIndent = countIndent(previousIndent, tabSize);
   if (indentAction === vscode.IndentAction.Indent) {
