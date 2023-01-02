@@ -16,4 +16,3 @@ jobs:
       - run: npm test
       - run: npm install -g vsce
       - run: vsce package
-
