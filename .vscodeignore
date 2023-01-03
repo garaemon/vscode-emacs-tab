@@ -3,7 +3,7 @@
 .gitignore
 .vscode-test/**
 .vscode/**
-node_modules/**
+# node_modules/**
 out/**/*.map
 out/test/**
 src/**
