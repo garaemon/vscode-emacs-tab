@@ -30,8 +30,8 @@ interface ILanguageConfiguration {
 class BracketRule {
   public openBracket: string;
   public closeBracket: string;
-  public openRegExp: RegExp;
-  public closeRegExp: RegExp;
+  public openRegExp: RegExp | null;
+  public closeRegExp: RegExp | null;
 
   public constructor(config: IBracketRuleConfig) {
     this.openBracket = config[0];
@@ -40,7 +40,7 @@ class BracketRule {
     this.closeRegExp = this.createCloseBracketRegExp(this.closeBracket);
   }
 
-  private createOpenBracketRegExp(openBracket: string): RegExp {
+  private createOpenBracketRegExp(openBracket: string): RegExp | null {
     let str = escapeRegExpCharacters(openBracket);
     if (!/\B/.test(str.charAt(0))) {
       str = '\\b' + str;
@@ -49,7 +49,7 @@ class BracketRule {
     return createRegExp(str);
   }
 
-  private createCloseBracketRegExp(closeBracket: string): RegExp {
+  private createCloseBracketRegExp(closeBracket: string): RegExp | null {
     let str = escapeRegExpCharacters(closeBracket);
     if (!/\B/.test(str.charAt(str.length - 1))) {
       str = str + '\\b';
@@ -60,40 +60,69 @@ class BracketRule {
 }
 
 class IndentationRule {
-  private unIndentedLinePattern: RegExp;
-  private increaseIndentPattern: RegExp;
-  private decreaseIndentPattern: RegExp;
-  private indentNextLinePattern: RegExp;
+  private unIndentedLinePattern: RegExp | null = null;
+  private increaseIndentPattern: RegExp | null = null;
+  private decreaseIndentPattern: RegExp | null = null;
+  private indentNextLinePattern: RegExp | null = null;
 
   public constructor(config: IIndentationRuleConfig) {
-    this.unIndentedLinePattern =
-      this.createRegExp(config && config.unIndentedLinePattern);
-    this.increaseIndentPattern =
-      this.createRegExp(config && config.increaseIndentPattern);
-    this.decreaseIndentPattern =
-      this.createRegExp(config && config.decreaseIndentPattern);
-    this.indentNextLinePattern =
-      this.createRegExp(config && config.indentNextLinePattern);
+    if (!config) {
+      return;
+    }
+    if (config.unIndentedLinePattern) {
+      this.unIndentedLinePattern =
+        this.createRegExp(config.unIndentedLinePattern);
+    }
+    if (config.increaseIndentPattern) {
+      this.increaseIndentPattern =
+        this.createRegExp(config.increaseIndentPattern);
+    }
+    if (config.decreaseIndentPattern) {
+      this.decreaseIndentPattern =
+        this.createRegExp(config.decreaseIndentPattern);
+    }
+    if (config.indentNextLinePattern) {
+      this.indentNextLinePattern =
+        this.createRegExp(config.indentNextLinePattern);
+    }
   }
 
   public testUnIndentedLinePattern(line: string): boolean {
-    return this.unIndentedLinePattern && this.unIndentedLinePattern.test(line);
+    if (this.unIndentedLinePattern) {
+      return this.unIndentedLinePattern.test(line);
+    }
+    else {
+      return false;
+    }
   }
 
   public testIncreaseIndentPattern(line: string): boolean {
-    return this.increaseIndentPattern && this.increaseIndentPattern.test(line);
+    if (this.increaseIndentPattern) {
+      return this.increaseIndentPattern.test(line);
+    }
+    else {
+      return false;
+    }
   }
 
   public testDecreaseIndentPattern(line: string): boolean {
-    return this.decreaseIndentPattern && this.decreaseIndentPattern.test(line);
+    if (this.decreaseIndentPattern) {
+      return this.decreaseIndentPattern.test(line);
+    } else {
+      return false;
+    }
   }
 
   public testIndentNextLinePattern(line: string): boolean {
-    return this.indentNextLinePattern && this.indentNextLinePattern.test(line);
+    if (this.indentNextLinePattern) {
+      return this.indentNextLinePattern.test(line);
+    } else {
+      return false;
+    }
   }
 
   public estimateIndentAction(validPreviousLine: string, currentLine: string):
-    vscode.IndentAction {
+    vscode.IndentAction | null {
     let nextIndentLevel: number = 0;
     let ruleMatched: boolean = false;
     if (this.testUnIndentedLinePattern(validPreviousLine)) {
@@ -118,11 +147,11 @@ class IndentationRule {
       } else if (nextIndentLevel < 0) {
         return vscode.IndentAction.Outdent;
       }
-    } else {
-      return null;
     }
+    return null;
   }
-  private createRegExp(s: string): RegExp {
+
+  private createRegExp(s: string): RegExp | null {
     try {
       if (s && s.length > 0) {
         return new RegExp(s);
@@ -238,6 +267,8 @@ function convertIndentActionToString(action: vscode.IndentAction): string {
     return 'Outdent';
   } else if (action === vscode.IndentAction.None) {
     return 'Keep';
+  } else {
+    return '';
   }
 }
 
@@ -247,7 +278,7 @@ function convertIndentActionToString(action: vscode.IndentAction): string {
  */
 function getPreviousAndCurrentLine(editor: vscode.TextEditor): string[] {
   if (!editor.selection.isEmpty) {
-    return [null, null];
+    return ['', ''];
   }
 
   const currentPosition = editor.selection.active;
@@ -256,7 +287,7 @@ function getPreviousAndCurrentLine(editor: vscode.TextEditor): string[] {
   const currentLine = allLinesArray[currentPosition.line];
   if (currentPosition.line === 0) {
     // first line, do nothing
-    return [null, currentLine];
+    return ['', currentLine];
   }
   // Lookup valid previous line because the line consisted of white spaces gives
   // no effect on indentation.
@@ -297,8 +328,11 @@ function mergeLanguageConfiguration(
  * @param id {string} id of language
  * @return {Object} return language configuration
  */
-function getLanguageConfiguration(id: string): ILanguageConfiguration {
+function getLanguageConfiguration(id: string): ILanguageConfiguration | null {
   const editor = vscode.window.activeTextEditor;
+  if (!editor) {
+    return null;
+  }
   const documentLanguageId: string = editor.document.languageId;
   let additionalConfiguration = {};
   if (documentLanguageId in ADDITIONAL_CONFIGURATION_FOR_LANGUAGE) {
@@ -310,7 +344,7 @@ function getLanguageConfiguration(id: string): ILanguageConfiguration {
     if (ext.packageJSON && ext.packageJSON.contributes &&
       ext.packageJSON.contributes.languages) {
       const packageLangData = ext.packageJSON.contributes.languages.find(
-        (langData) => (langData.id === documentLanguageId));
+        (langData: any) => (langData.id === documentLanguageId));
       if (packageLangData) {
         const langConfigFilepath =
           path.join(ext.extensionPath, packageLangData.configuration);
@@ -349,21 +383,23 @@ function estimateIndentAction(
   }
   const onEnterRulesArray = languageConfiguration.onEnterRules;
   const bracketsArray = languageConfiguration.brackets;
-  const currentLineWithoutLeadingWhitespaces = currentLine.replace(/^\s*/, '');
+  const currentLineWithoutLeadingWhiteSpaces = currentLine.replace(/^\s*/, '');
   // 0 indentPattern
-  const indentationRule =
-    new IndentationRule(languageConfiguration.indentationRules);
-  const indentationRuleIndentAction =
-    indentationRule.estimateIndentAction(validPreviousLine, currentLine);
-  if (indentationRuleIndentAction != null) {
-    return indentationRuleIndentAction;
+  if (languageConfiguration.indentationRules) {
+    const indentationRule =
+      new IndentationRule(languageConfiguration.indentationRules);
+    const indentationRuleIndentAction =
+      indentationRule.estimateIndentAction(validPreviousLine, currentLine);
+    if (indentationRuleIndentAction != null) {
+      return indentationRuleIndentAction;
+    }
   }
   // 1 regexp Rule, not yet supported
   /*
   for (const rule of onEnterRulesArray) {
     if (rule.beforeText.test(validPreviousLine)) {
       if (rule.afterText) {
-        if (rule.afterText.test(currentLineWithoutLeadingWhitespaces)) {
+        if (rule.afterText.test(currentLineWithoutLeadingWhiteSpaces)) {
           return rule.action;
         }
       } else {
@@ -375,31 +411,31 @@ function estimateIndentAction(
 
   // 2 special indent-outdent
   if (validPreviousLine.length > 0 &&
-    currentLineWithoutLeadingWhitespaces.length > 0) {
+    currentLineWithoutLeadingWhiteSpaces.length > 0 && bracketsArray) {
     for (const bracketConfig of bracketsArray) {
       const bracket = new BracketRule(bracketConfig);
-      if (bracket.openRegExp.test(validPreviousLine) &&
-        bracket.closeRegExp.test(currentLineWithoutLeadingWhitespaces)) {
+      if (bracket.openRegExp && bracket.closeRegExp && bracket.openRegExp.test(validPreviousLine) &&
+        bracket.closeRegExp.test(currentLineWithoutLeadingWhiteSpaces)) {
         return vscode.IndentAction.IndentOutdent;
       }
     }
   }
 
   // 3 open bracket based logic
-  if (validPreviousLine.length > 0) {
+  if (validPreviousLine.length > 0 && bracketsArray) {
     for (const bracketConfig of bracketsArray) {
       const bracket = new BracketRule(bracketConfig);
-      if (bracket.openRegExp.test(validPreviousLine)) {
+      if (bracket.openRegExp && bracket.openRegExp.test(validPreviousLine)) {
         return vscode.IndentAction.Indent;
       }
     }
   }
 
   // 4 close bracket based logic
-  if (currentLineWithoutLeadingWhitespaces.length > 0) {
+  if (currentLineWithoutLeadingWhiteSpaces.length > 0 && bracketsArray) {
     for (const bracketConfig of bracketsArray) {
       const bracket = new BracketRule(bracketConfig);
-      if (bracket.closeRegExp.test(currentLineWithoutLeadingWhitespaces)) {
+      if (bracket.closeRegExp && bracket.closeRegExp.test(currentLineWithoutLeadingWhiteSpaces)) {
         return vscode.IndentAction.Outdent;
       }
     }
@@ -413,7 +449,7 @@ function escapeRegExpCharacters(s: string): string {
   return s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 }
 
-function createRegExp(s: string): RegExp {
+function createRegExp(s: string): RegExp | null {
   try {
     return new RegExp(s);
   } catch (err) {
@@ -421,7 +457,7 @@ function createRegExp(s: string): RegExp {
   }
 }
 
-function createOpenBracketRegExp(openBracket: string): RegExp {
+function createOpenBracketRegExp(openBracket: string): RegExp | null {
   let str = escapeRegExpCharacters(openBracket);
   if (!/\B/.test(str.charAt(0))) {
     str = '\\b' + str;
@@ -430,7 +466,7 @@ function createOpenBracketRegExp(openBracket: string): RegExp {
   return createRegExp(str);
 }
 
-function createCloseBracketRegExp(closeBracket: string): RegExp {
+function createCloseBracketRegExp(closeBracket: string): RegExp | null {
   let str = escapeRegExpCharacters(closeBracket);
   if (!/\B/.test(str.charAt(str.length - 1))) {
     str = str + '\\b';
@@ -441,7 +477,7 @@ function createCloseBracketRegExp(closeBracket: string): RegExp {
 
 function getTabSize(languageId: string): number {
   // TODO: estimate from content
-  return vscode.workspace.getConfiguration('editor', {languageId: languageId}).tabSize;
+  return vscode.workspace.getConfiguration('editor', { languageId: languageId }).tabSize;
 }
 
 /**
@@ -488,6 +524,9 @@ export function reindentCurrentLine(
   currentLine: string, languageId: string): void {
   const tabSize = getTabSize(languageId);
   const editor = vscode.window.activeTextEditor;
+  if (!editor) {
+    return;
+  }
   const currentPosition = editor.selection.active;
   const document = editor.document;
 
@@ -495,7 +534,7 @@ export function reindentCurrentLine(
   const beforeIndentCurrentIndent =
     countIndent(getIndent(currentLine), tabSize);
   const beforeIndentCurrentIndentNative = getIndent(currentLine).length;
-  const currentLineWithoutLeadingWhitespaces = currentLine.replace(/^\s*/, '');
+  const currentLineWithoutLeadingWhiteSpaces = currentLine.replace(/^\s*/, '');
 
   let idealIndent = countIndent(previousIndent, tabSize);
   if (indentAction === vscode.IndentAction.Indent) {
@@ -515,17 +554,19 @@ export function reindentCurrentLine(
     var indentedCurrentLine = indentLine(
       currentLine, idealIndent, previousIndent,
       countIndent(previousIndent, tabSize), tabSize);
-    vscode.window.activeTextEditor.edit((edit) => {
-      const startPosition = new vscode.Position(currentPosition.line, 0);
-      const endPosition =
-        new vscode.Position(currentPosition.line, currentLine.length);
-      if (document.eol == 2 && 1 < indentedCurrentLine.length
-        && currentLine.length != beforeIndentCurrentIndentNative) {
-        indentedCurrentLine = indentedCurrentLine.substring(0, indentedCurrentLine.length - 1);
-      }
-      edit.replace(
-        new vscode.Range(startPosition, endPosition), indentedCurrentLine);
-    });
+    if (vscode.window.activeTextEditor) {
+      vscode.window.activeTextEditor.edit((edit) => {
+        const startPosition = new vscode.Position(currentPosition.line, 0);
+        const endPosition =
+          new vscode.Position(currentPosition.line, currentLine.length);
+        if (document.eol == 2 && 1 < indentedCurrentLine.length
+          && currentLine.length != beforeIndentCurrentIndentNative) {
+          indentedCurrentLine = indentedCurrentLine.substring(0, indentedCurrentLine.length - 1);
+        }
+        edit.replace(
+          new vscode.Range(startPosition, endPosition), indentedCurrentLine);
+      });
+    }
   }
 
   // move cursor if needed
@@ -554,7 +595,7 @@ function getValidPreviousLine(
       return previousLineContent;
     }
   }
-  return null;
+  return '';
 }
 
 function indentLine(
@@ -572,7 +613,7 @@ function indentLine(
 }
 
 /**
- * get leading speces.
+ * get leading spaces.
  * @param {string} line
  * @return {string}
  */
