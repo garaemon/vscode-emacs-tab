@@ -16,5 +16,25 @@ jobs:
       - run: npm install
       - run: npm test
       - run: npm install -g vsce
+      - name: Check version
+        run: |
+          npx -c 'echo VERSION=${npm_package_version}' >> $GITHUB_ENV
+      - name: Check if the version is prerelease or not
+        run: |
+          VERSION_MAJOR="${VERSION%%\.*}"
+          VERSION_MINOR="${VERSION#*.}"
+          VERSION_MINOR="${VERSION_MINOR%.*}"
+          VERSION_PATCH="${VERSION##*.}"
+          if [ $((VERSION_MINOR%2)) -eq 0 ]; then
+            echo PRERELEASE=false >> $GITHUB_ENV
+          else
+            echo PRERELEASE=true >> $GITHUB_ENV
+          fi
       - run: vsce package
+        if: ${{ env.PRERELEASE == 'false' }}
+      - run: vsce package --pre-release
+        if: ${{ env.PRERELEASE == true }}
       - run: vsce publish -p ${{ secrets.VSCE_PAT }}
+        if: ${{ env.PRERELEASE == 'false' }}
+      - run: vsce publish -p ${{ secrets.VSCE_PAT }} --pre-release
+        if: ${{ env.PRERELEASE == 'false' }}
