@@ -345,7 +345,7 @@ function getLanguageConfiguration(id: string): ILanguageConfiguration | null {
       ext.packageJSON.contributes.languages) {
       const packageLangData = ext.packageJSON.contributes.languages.find(
         (langData: any) => (langData.id === documentLanguageId));
-      if (packageLangData) {
+      if (packageLangData && packageLangData.configuration !== undefined) {
         const langConfigFilepath =
           path.join(ext.extensionPath, packageLangData.configuration);
         const configFileContent = fs.readFileSync(langConfigFilepath).toString();
