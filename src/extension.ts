@@ -345,7 +345,9 @@ function getLanguageConfiguration(id: string): ILanguageConfiguration | null {
       ext.packageJSON.contributes.languages) {
       const packageLangData = ext.packageJSON.contributes.languages.find(
         (langData: any) => (langData.id === documentLanguageId));
-      if (packageLangData) {
+      // packageLangData.configuration can be undefined. For example, configuration of the ROS
+      // extension is undefined.
+      if (packageLangData && packageLangData.configuration) {
         const langConfigFilepath =
           path.join(ext.extensionPath, packageLangData.configuration);
         const configFileContent = fs.readFileSync(langConfigFilepath).toString();
