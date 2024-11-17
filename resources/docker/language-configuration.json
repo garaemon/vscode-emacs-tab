@@ -1,1 +1,1 @@
-{"comments":{"lineComment":"#"},"brackets":[["{","}"],["[","]"],["(",")"]],"autoClosingPairs":[["{","}"],["[","]"],["(",")"],["\"","\""],["'","'"]],"surroundingPairs":[["{","}"],["[","]"],["(",")"],["\"","\""],["'","'"]]}
+{"comments":{"lineComment":"#"},"brackets":[["{","}"],["[","]"],["(",")"]],"autoClosingPairs":[["{","}"],["[","]"],["(",")"],["\"","\""],["'","'"]],"surroundingPairs":[["{","}"],["[","]"],["(",")"],["\"","\""],["'","'"]],"indentationRules":{"increaseIndentPattern":"^\\s*.*(:|-) ?(&amp;\\w+)?(\\{[^}\"']*|\\([^)\"']*)?$","decreaseIndentPattern":"^\\s+\\}$"}}
